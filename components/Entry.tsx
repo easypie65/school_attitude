@@ -6,13 +6,20 @@ interface EntryProps {
 
 const Entry: React.FC<EntryProps> = ({ onSelectRole }) => {
     const [studentName, setStudentName] = useState('');
+    const [showPasswordInput, setShowPasswordInput] = useState(false);
+    const [teacherPassword, setTeacherPassword] = useState('');
 
-    const handleTeacherLogin = () => {
-        const password = prompt('교사 비밀번호를 입력하세요:');
-        if (password === '8808935') { // Updated password
+    const handleTeacherLoginClick = () => {
+        setShowPasswordInput(true);
+    };
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (teacherPassword === '8808935') {
             onSelectRole('teacher');
-        } else if (password !== null) {
+        } else {
             alert('비밀번호가 올바르지 않습니다.');
+            setTeacherPassword('');
         }
     };
 
@@ -59,12 +66,32 @@ const Entry: React.FC<EntryProps> = ({ onSelectRole }) => {
                     <hr className="flex-grow border-t border-slate-300"/>
                 </div>
 
-                <button
-                    onClick={handleTeacherLogin}
-                    className="w-full px-8 py-4 text-lg font-bold text-indigo-600 bg-white border-2 border-indigo-600 rounded-lg shadow-md hover:bg-indigo-50 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    교사로 로그인
-                </button>
+                {!showPasswordInput ? (
+                    <button
+                        onClick={handleTeacherLoginClick}
+                        className="w-full px-8 py-4 text-lg font-bold text-indigo-600 bg-white border-2 border-indigo-600 rounded-lg shadow-md hover:bg-indigo-50 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        교사로 로그인
+                    </button>
+                ) : (
+                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                         <input
+                            type="password"
+                            value={teacherPassword}
+                            onChange={(e) => setTeacherPassword(e.target.value)}
+                            placeholder="교사 비밀번호를 입력하세요"
+                            className="w-full px-4 py-3 text-lg border-2 border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            aria-label="Teacher Password"
+                            autoFocus
+                        />
+                        <button
+                            type="submit"
+                            className="w-full px-8 py-4 text-lg font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            확인
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );
