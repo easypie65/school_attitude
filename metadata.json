@@ -1,0 +1,5 @@
+{
+  "name": "School Life Attitude Survey",
+  "description": "A survey application to assess a student's attitude towards school life, including classroom behavior, use of common spaces, and respect for others. Results are categorized and visualized.",
+  "requestFramePermissions": []
+}
