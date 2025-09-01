@@ -18,15 +18,39 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-      # lock 파일 없으면 npm ci 실패 → install 사용
-      - run: npm install --no-fund --no-audit
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+
+      # --- 진단 로그 (실패시 원인 파악용) ---
+      - name: Show Node & NPM versions
+        run: |
+          node -v
+          npm -v
+
+      - name: Show repo files (top)
+        run: |
+          ls -la
+          echo "--- package.json ---"
+          cat package.json
+
+      # --- 설치: lock 파일이 없어도 실패하지 않게 ---
+      - name: Install deps
+        run: |
+          npm install --legacy-peer-deps --no-fund --no-audit
+
+      # --- vite 빌드: 에러를 자세히 출력 ---
+      - name: Build
+        run: |
+          npm run build --verbose
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
