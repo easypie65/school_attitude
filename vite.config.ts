@@ -1,17 +1,10 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+// vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
-});
+// 사용자 페이지면 base: '/' 로 두세요.
+// 일반(프로젝트) 레포면 반드시 '/레포이름/' 로!
+export default defineConfig({
+  plugins: [react()],
+  base: '/school_attitude/'
+})
