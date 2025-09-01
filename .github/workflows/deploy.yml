@@ -23,7 +23,8 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
+      # npm ci 는 package-lock.json 없으면 실패 → install 로 교체
+      - run: npm install --no-fund --no-audit
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
