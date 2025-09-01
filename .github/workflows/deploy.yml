@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # cache 옵션 제거 (락 파일이 없어서 실패하던 부분)
+          # ⚠️ cache 옵션 제거 (락 파일 없으므로)
 
       - name: Install deps
         run: npm install --legacy-peer-deps --no-fund --no-audit
