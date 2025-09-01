@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { surveyQuestions } from './data/surveyData';
 import type { Answers, GroupScore, Submission } from './types';
@@ -15,13 +16,12 @@ const App: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null);
     
-    // Load submissions from localStorage on mount
+    // Load submissions and in-progress survey from localStorage on mount
     useEffect(() => {
         try {
             const storedSubmissions = localStorage.getItem('surveySubmissions');
             if (storedSubmissions) {
                 const parsedSubmissions = JSON.parse(storedSubmissions);
-                // Ensure the loaded data is an array before setting state
                 if (Array.isArray(parsedSubmissions)) {
                     setSubmissions(parsedSubmissions);
                 } else {
@@ -32,11 +32,42 @@ const App: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to load or parse submissions from local storage. Clearing storage.", error);
-            // If parsing fails, the data is corrupt, so remove it.
             localStorage.removeItem('surveySubmissions');
             setSubmissions([]);
         }
+
+        // Load in-progress survey and auto-login student if progress exists
+        try {
+            const savedProgress = localStorage.getItem('surveyInProgress');
+            if (savedProgress) {
+                const { studentName: savedName, answers: savedAnswers } = JSON.parse(savedProgress);
+                if (savedName && typeof savedName === 'string') {
+                    // If we find saved progress, restore the entire session
+                    setStudentName(savedName);
+                    setUserRole('student'); 
+                    if (savedAnswers && typeof savedAnswers === 'object') {
+                        setAnswers(savedAnswers);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load in-progress survey from local storage.", error);
+            localStorage.removeItem('surveyInProgress');
+        }
     }, []);
+
+    // Auto-save survey progress for students
+    useEffect(() => {
+        if (userRole === 'student' && !isCompleted && studentName) {
+            try {
+                const progress = { studentName, answers };
+                localStorage.setItem('surveyInProgress', JSON.stringify(progress));
+            } catch (error) {
+                console.error("Failed to auto-save survey progress", error);
+            }
+        }
+    }, [userRole, isCompleted, studentName, answers]);
+
 
     const calculateGroupScores = useCallback((currentAnswers: Answers): GroupScore[] => {
         const scores: Record<string, { score: number, maxScore: number }> = {};
@@ -86,6 +117,7 @@ const App: React.FC = () => {
             setSubmissions(updatedSubmissions);
             try {
                 localStorage.setItem('surveySubmissions', JSON.stringify(updatedSubmissions));
+                localStorage.removeItem('surveyInProgress'); // Clear auto-saved data on successful submission
             } catch (error) {
                  console.error("Failed to save submission to local storage", error);
                  alert("답변을 저장하는 중 오류가 발생했습니다.");
@@ -100,21 +132,30 @@ const App: React.FC = () => {
 
     const handleLogin = useCallback((role: 'student' | 'teacher', name?: string) => {
         if (role === 'student' && name) {
+            // If it's a new student (different name), clear old answers.
+            // This is mainly for the case where progress wasn't auto-loaded.
+            if (name !== studentName) {
+                setAnswers({});
+            }
             setStudentName(name);
             setUserRole('student');
-            setAnswers({});
             setIsCompleted(false);
         } else if (role === 'teacher') {
             setUserRole('teacher');
+            // Clear any student progress when teacher logs in to avoid confusion
+            setStudentName('');
+            setAnswers({});
+            localStorage.removeItem('surveyInProgress');
         }
-    }, []);
+    }, [studentName]);
 
     const handleLogout = useCallback(() => {
         setUserRole(null);
         setStudentName('');
         setViewingSubmission(null);
-        setIsCompleted(false); // Reset completion state
-        setAnswers({}); // Reset answers
+        setIsCompleted(false);
+        setAnswers({});
+        localStorage.removeItem('surveyInProgress'); // Clear auto-saved data on logout
     }, []);
 
     const renderContent = () => {
@@ -167,9 +208,22 @@ const App: React.FC = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <h1 className="text-xl sm:text-2xl font-bold text-slate-700">학교 생활 태도 설문</h1>
-                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            S
-                        </div>
+                        {userRole === 'student' && studentName ? (
+                            <div className="flex items-center space-x-4">
+                                <span className="font-medium text-slate-600 hidden sm:block">안녕하세요, {studentName}님</span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="px-4 py-2 text-sm font-bold text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-all duration-300"
+                                    aria-label="Logout"
+                                >
+                                    로그아웃
+                                </button>
+                            </div>
+                        ) : userRole === null && (
+                            <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                S
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
